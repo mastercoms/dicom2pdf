@@ -1,6 +1,7 @@
 import os
 import random
 import tempfile
+import traceback
 from pathlib import Path
 from typing import Any, BinaryIO, Sequence, Tuple
 
@@ -10,30 +11,34 @@ import pydicom
 import streamlit as st
 from matplotlib.backends.backend_pdf import PdfPages
 
+DICOM_EXTENSIONS = {".dcm", ".dicom", ".dic"}
+
 
 def read_dicom_image(
     file_path: str | bytes | os.PathLike | BinaryIO,
-) -> Tuple[np.ndarray | None, dict[str, Any] | None]:
+) -> Tuple[np.ndarray | None, dict[str, str | Any] | None]:
     try:
         dicom_data = pydicom.dcmread(file_path)
         try:
             image_array = dicom_data.pixel_array
-        except Exception:
+        except:
+            traceback.print_exc()
             return None, None
 
         metadata = {
-            "patient_name": getattr(dicom_data, "PatientName", "Unknown"),
-            "series_description": getattr(dicom_data, "SeriesDescription", "Unknown"),
-            "instance_number": getattr(dicom_data, "InstanceNumber", "Unknown"),
-            "slice_location": getattr(dicom_data, "SliceLocation", "Unknown"),
-            "study_date": getattr(dicom_data, "StudyDate", "Unknown"),
-            "modality": getattr(dicom_data, "Modality", "Unknown"),
+            "patient_name": getattr(dicom_data, "PatientName", ""),
+            "series_description": getattr(dicom_data, "SeriesDescription", ""),
+            "instance_number": getattr(dicom_data, "InstanceNumber", ""),
+            "slice_location": getattr(dicom_data, "SliceLocation", ""),
+            "study_date": getattr(dicom_data, "StudyDate", ""),
+            "modality": getattr(dicom_data, "Modality", ""),
             "rows": getattr(dicom_data, "Rows", 0),
             "columns": getattr(dicom_data, "Columns", 0),
         }
 
         return image_array, metadata
     except:
+        traceback.print_exc()
         return None, None
 
 
@@ -46,22 +51,6 @@ def normalize_image(image_array: np.ndarray, contrast_factor=0.9) -> np.ndarray:
     if img_max > img_min:
         image_array = (image_array - img_min) / (img_max - img_min)
     return np.power(image_array, contrast_factor)
-
-
-DICOM_EXTENSIONS = {".dcm", ".dicom", ".dic"}
-
-
-def find_dicom_files(folder_path: Path) -> list[str]:
-    dicom_files = []
-    for path in folder_path.rglob("*"):
-        if path.is_file():
-            if path.suffix.lower() in DICOM_EXTENSIONS or not path.suffix:
-                try:
-                    pydicom.dcmread(path, stop_before_pixels=True)
-                    dicom_files.append(str(path))
-                except:
-                    pass
-    return dicom_files
 
 
 def convert_to_pdf(
@@ -86,8 +75,17 @@ def convert_to_pdf(
             ax.set_facecolor("black")
             ax.axis("off")
 
-            title = f"{metadata.get('patient_name', '')} | {metadata.get('series_description', '')}"
-            fig.suptitle(title, fontsize=12, y=0.95, color="white")
+            title = metadata.get("patient_name", "")
+            title = title.strip()
+            title = title.replace("^", " ")
+            title = title.replace("_", " ")
+            if metadata.get("series_description"):
+                desc = metadata["series_description"].strip()
+                desc = desc.replace("^", " ")
+                desc = desc.replace("_", " ")
+                title += f" | {desc}"
+            if title:
+                fig.suptitle(title, fontsize=12, y=0.95, color="white")
 
             pdf.savefig(
                 fig,
