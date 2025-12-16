@@ -12,8 +12,6 @@ The **DICOM to PDF Converter** is a powerful and user-friendly web application b
 
 Designed with both usability and professionalism in mind, the application supports bulk uploads of zipped DICOM folders, automatically processes the images on the backend, and delivers a downloadable PDF with patient and scan metadata elegantly displayed on each page.
 
----
-
 ## Features
 
 * **Easy Upload:** Upload zipped folders containing your DICOM files directly through the web interface. No need for complex software or command-line usage.
@@ -21,12 +19,8 @@ Designed with both usability and professionalism in mind, the application suppor
 * **High-Quality PDF Generation:** Generates square pages optimized for display and printing with a stylish black background and white text for easy viewing in dark environments.
 * **Contrast Enhancement:** Advanced image normalization enhances scan visibility for better diagnostic review.
 * **Metadata Display:** Each page displays relevant patient and scan metadata (e.g., patient name, series description) for quick identification.
-* **Professional Branding:** Each PDF page footer includes custom branding: `DICOM2PDF - By Mohmad AlJasem https://aljasem.eu.org`.
 * **Interactive Web Interface:** Powered by Streamlit, offering a responsive, modern, and intuitive user experience.
-* **Google Analytics Ready:** Includes an easy way to insert Google Analytics tracking code for monitoring site usage and visitor behavior.
 * **Downloadable Output:** Users receive a direct download link for their generated PDF after processing completes.
-
----
 
 ## Why Use This Tool?
 
@@ -40,8 +34,6 @@ This tool provides a universal, portable format by converting DICOM scans into P
 * Include important metadata for context and documentation.
 
 Whether you’re a medical professional needing to compile imaging data or a researcher archiving scans, this converter streamlines your workflow.
-
----
 
 ## Installation & Setup
 
@@ -79,8 +71,6 @@ To run the app locally:
    http://localhost:8501
    ```
 
----
-
 ## Usage Instructions
 
 1. **Prepare your DICOM folder:**
@@ -101,33 +91,22 @@ To run the app locally:
 
    * Once complete, click the download button to save your PDF file.
 
----
-
 ## Customization & Configuration
 
-* **Google Analytics:** Replace the placeholder tracking ID (`G-XXXXXXX`) in the app code with your own to start tracking.
 * **PDF Styling:** You can customize figure size, DPI, colors, fonts, and footer text within the `convert_to_pdf` function.
 * **Supported DICOM Variants:** The app reads common DICOM formats but might require additional plugins like `pylibjpeg` for JPEG compressed images.
-
----
 
 ## Contributing
 
 Contributions, bug reports, and feature requests are welcome! Please open an issue or submit a pull request on GitHub.
 
----
-
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
----
-
 ## About the Author
 
 Mohmad AlJasem is a medical professional and developer passionate about bridging healthcare and technology. Visit [https://aljasem.eu.org](https://aljasem.eu.org) for more projects and contact info.
-
----
 
 ## Acknowledgments
 
@@ -138,7 +117,3 @@ Mohmad AlJasem is a medical professional and developer passionate about bridging
 ---
 
 **Feel free to star the repo ⭐ if you find it useful!**
-
----
-
-If you want, I can generate a `requirements.txt` file or help you prepare a LICENSE file too. Just ask!
