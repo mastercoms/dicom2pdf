@@ -143,7 +143,15 @@ if dicom_files:
     with st.spinner("Processing your DICOM files..."):
         with tempfile.TemporaryDirectory() as tmpdir:
             st.subheader("📸 Image Preview")
-            preview_files = random.sample(dicom_files, min(10, len(dicom_files)))
+            preview_limit = 10
+            count = min(preview_limit, len(dicom_files))
+            preview_files = (
+                dicom_files
+                if count <= preview_limit
+                else random.sample(dicom_files, count)
+            )
+            if count > preview_limit:
+                st.markdown(f"### Sample image previews")
             for file in preview_files:
                 image_array, metadata = read_dicom_image(file)
                 if image_array is None or metadata is None:
@@ -151,10 +159,12 @@ if dicom_files:
                 norm_img = normalize_image(image_array, contrast_factor)
                 st.image(
                     norm_img,
-                    caption=str(file),
+                    caption=f"File: {file.name} | Data: {metadata}",
                     width="stretch",
                     clamp=True,
                 )
+            if count > preview_limit:
+                st.info(f"And {len(dicom_files) - count} more images...")
 
             pdf_name = f"{parent.name}.pdf"
             output_pdf_path = Path(tmpdir) / pdf_name
