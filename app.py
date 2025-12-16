@@ -57,7 +57,7 @@ def convert_to_pdf(
     dicom_files: Sequence[BinaryIO],
     output_pdf: Path,
     contrast_factor: float = 0.9,
-    dpi: int = 200,
+    dpi: int = 300,
 ) -> bool:
     if not dicom_files:
         return False
@@ -75,12 +75,12 @@ def convert_to_pdf(
             ax.set_facecolor("black")
             ax.axis("off")
 
-            title = metadata.get("patient_name", "")
+            title = str(metadata.get("patient_name", ""))
             title = title.strip()
             title = title.replace("^", " ")
             title = title.replace("_", " ")
             if metadata.get("series_description"):
-                desc = metadata["series_description"].strip()
+                desc = str(metadata["series_description"]).strip()
                 desc = desc.replace("^", " ")
                 desc = desc.replace("_", " ")
                 title += f" | {desc}"
@@ -134,34 +134,37 @@ dicom_files = st.file_uploader(
 )
 
 contrast_factor = st.slider("Adjust Contrast", 0.5, 1.5, 0.9, step=0.05)
-dpi = st.slider("Set PDF Resolution (DPI)", 100, 300, 200, step=10)
+dpi = st.slider("Set PDF Resolution (DPI)", 100, 600, 300, step=10)
 
 if dicom_files:
     parent = Path(dicom_files[0].name).parent
     with st.spinner("Processing your DICOM files..."):
         with tempfile.TemporaryDirectory() as tmpdir:
             st.subheader("📸 Image Preview")
+            count = len(dicom_files)
             preview_limit = 10
-            count = min(preview_limit, len(dicom_files))
-            preview_files = (
-                dicom_files
-                if count <= preview_limit
-                else random.sample(dicom_files, count)
-            )
+            is_sample = False
             if count > preview_limit:
-                st.markdown(f"### Sample image previews")
-            for file in preview_files:
+                count = preview_limit
+                is_sample = True
+            preview_files = (
+                dicom_files if not is_sample else random.sample(dicom_files, count)
+            )
+            cols = 5
+            columns = st.columns(cols)
+            for i, file in enumerate(preview_files):
                 image_array, metadata = read_dicom_image(file)
                 if image_array is None or metadata is None:
                     continue
                 norm_img = normalize_image(image_array, contrast_factor)
-                st.image(
-                    norm_img,
-                    caption=f"File: {file.name} | Data: {metadata}",
-                    width="stretch",
-                    clamp=True,
-                )
-            if count > preview_limit:
+                with columns[i % cols]:
+                    st.image(
+                        norm_img,
+                        caption=f"File: {file.name} | Data: {metadata}",
+                        width="stretch",
+                        clamp=True,
+                    )
+            if is_sample:
                 st.info(f"And {len(dicom_files) - count} more images...")
 
             pdf_name = f"{parent.name}.pdf"
