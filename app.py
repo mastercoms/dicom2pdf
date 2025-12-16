@@ -1,5 +1,6 @@
 import os
 import random
+import tempfile
 from pathlib import Path
 from typing import Any, BinaryIO, Sequence, Tuple
 
@@ -50,13 +51,13 @@ def normalize_image(image_array: np.ndarray, contrast_factor=0.9) -> np.ndarray:
 DICOM_EXTENSIONS = {".dcm", ".dicom", ".dic"}
 
 
-def find_dicom_files(folder_path: Path):
+def find_dicom_files(folder_path: Path) -> list[str]:
     dicom_files = []
     for path in folder_path.rglob("*"):
         if path.is_file():
             if path.suffix.lower() in DICOM_EXTENSIONS or not path.suffix:
                 try:
-                    pydicom.dcmread(str(path), stop_before_pixels=True)
+                    pydicom.dcmread(path, stop_before_pixels=True)
                     dicom_files.append(str(path))
                 except:
                     pass
@@ -68,9 +69,9 @@ def convert_to_pdf(
     output_pdf: Path,
     contrast_factor: float = 0.9,
     dpi: int = 200,
-):
+) -> bool:
     if not dicom_files:
-        return None
+        return False
 
     with PdfPages(output_pdf) as pdf:
         for file in dicom_files:
@@ -97,7 +98,7 @@ def convert_to_pdf(
             )
             plt.close(fig)
 
-    return output_pdf
+    return True
 
 
 # Streamlit app
@@ -140,29 +141,42 @@ dpi = st.slider("Set PDF Resolution (DPI)", 100, 300, 200, step=10)
 if dicom_files:
     parent = Path(dicom_files[0].name).parent
     with st.spinner("Processing your DICOM files..."):
-        st.subheader("📸 Image Preview")
-        preview_files = random.sample(dicom_files, min(10, len(dicom_files)))
-        for file in preview_files:
-            image_array, metadata = read_dicom_image(file)
-            if image_array is None or metadata is None:
-                continue
-            norm_img = normalize_image(image_array, contrast_factor)
-            st.image(
-                norm_img,
-                caption=str(file),
-                use_column_width=True,
-                clamp=True,
+        with tempfile.TemporaryDirectory() as tmpdir:
+            st.subheader("📸 Image Preview")
+            preview_files = random.sample(dicom_files, min(10, len(dicom_files)))
+            for file in preview_files:
+                image_array, metadata = read_dicom_image(file)
+                if image_array is None or metadata is None:
+                    continue
+                norm_img = normalize_image(image_array, contrast_factor)
+                st.image(
+                    norm_img,
+                    caption=str(file),
+                    width="stretch",
+                    clamp=True,
+                )
+
+            pdf_name = f"{parent.name}.pdf"
+            output_pdf_path = Path(tmpdir) / pdf_name
+            result = convert_to_pdf(
+                dicom_files, output_pdf_path, contrast_factor=contrast_factor, dpi=dpi
             )
 
-        output_pdf_path = parent / f"{parent.name}.pdf"
-        result = convert_to_pdf(
-            dicom_files, output_pdf_path, contrast_factor=contrast_factor, dpi=dpi
-        )
-
-        if result and os.path.exists(output_pdf_path):
-            with open(output_pdf_path, "rb") as f:
-                st.success(f"✅ PDF successfully created at {output_pdf_path}!")
-        else:
-            st.error("Failed to generate PDF. Please check your files.")
+            if (
+                result
+                and output_pdf_path.exists()
+                and output_pdf_path.is_file()
+                and output_pdf_path.stat().st_size > 0
+            ):
+                with open(output_pdf_path, "rb") as f:
+                    st.success("✅ PDF successfully created!")
+                    st.download_button(
+                        "📥 Download PDF",
+                        f,
+                        file_name=pdf_name,
+                        mime="application/pdf",
+                    )
+            else:
+                st.error("Failed to generate PDF. Please check your files.")
 else:
     st.info("Please upload a valid folder containing DICOM files.")
