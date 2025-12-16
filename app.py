@@ -18,7 +18,7 @@ def read_dicom_image(
     file_path: str | bytes | os.PathLike | BinaryIO,
 ) -> Tuple[np.ndarray | None, dict[str, str | Any] | None]:
     try:
-        dicom_data = pydicom.dcmread(file_path)
+        dicom_data = pydicom.dcmread(file_path, force=True)
         try:
             image_array = dicom_data.pixel_array
         except:
@@ -173,12 +173,8 @@ if dicom_files:
             failure_code = 0
             if not result:
                 failure_code |= 1 << 0
-            if not output_pdf_path.exists():
+            if not output_pdf_path.exists() or not output_pdf_path.is_file():
                 failure_code |= 1 << 1
-            if not output_pdf_path.is_file():
-                failure_code |= 1 << 2
-            if output_pdf_path.stat().st_size == 0:
-                failure_code |= 1 << 3
 
             if failure_code == 0:
                 with open(output_pdf_path, "rb") as f:
